@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Cormorant+Garamond:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #efece5;
+        --ink-ui: #2e2e2e;
+        --muted: #777;
+        --env-back: #d9d4c8;
+        --env-front: #e8e4da;
+        --env-flap: #e2ddd1;
+        --line: rgba(46, 46, 46, 0.35);
+        --paper: #fbf9f4;
+        --ink: #2b2b2b;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #262626;
+          --ink-ui: #e8e4da;
+          --muted: #a09c93;
+          --env-back: #b9b4a8;
+          --env-front: #cfcabe;
+          --env-flap: #c4bfb3;
+          --line: rgba(232, 228, 218, 0.4);
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #262626;
+        --ink-ui: #e8e4da;
+        --muted: #a09c93;
+        --env-back: #b9b4a8;
+        --env-front: #cfcabe;
+        --env-flap: #c4bfb3;
+        --line: rgba(232, 228, 218, 0.4);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink-ui);
+        font-family: "Cormorant Garamond", Georgia, serif;
+        overflow: hidden;
+      }
+
+      /* Opening screen */
+      .stage {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2.6rem;
+        padding: 1.5rem;
+        transition:
+          opacity 0.9s ease,
+          transform 0.9s ease;
+      }
+      body.reading .stage {
+        opacity: 0;
+        transform: scale(0.94);
+        pointer-events: none;
+      }
+      h1 {
+        font-weight: 400;
+        font-size: clamp(1.5rem, 5vw, 2rem);
+        letter-spacing: 0.04em;
+        margin: 0;
+        text-align: center;
+      }
+      .env {
+        position: relative;
+        width: min(86vw, 380px);
+        aspect-ratio: 3/2;
+        perspective: 900px;
+        animation: float 6s ease-in-out infinite;
+        margin-top: 3rem;
+      }
+      .env.opening {
+        animation: none;
+      }
+      @keyframes float {
+        50% {
+          transform: translateY(-7px);
+        }
+      }
+      .back {
+        position: absolute;
+        inset: 0;
+        background: var(--env-back);
+        border-radius: 3px;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
+      }
+      .note {
+        position: absolute;
+        left: 7%;
+        right: 7%;
+        top: 6%;
+        height: 88%;
+        background: var(--paper);
+        z-index: 2;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+        transition: transform 1s cubic-bezier(0.3, 0.7, 0.2, 1) 0.6s;
+        padding: 14% 12%;
+      }
+      .note i {
+        display: block;
+        height: 1px;
+        background: rgba(0, 0, 0, 0.14);
+        margin-bottom: 11%;
+      }
+      .env.opening .note {
+        transform: translateY(-48%);
+      }
+      .front {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        background: var(--env-front);
+        clip-path: polygon(0 0, 50% 54%, 100% 0, 100% 100%, 0 100%);
+        border-radius: 3px;
+      }
+      .flap {
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        background: var(--env-flap);
+        clip-path: polygon(0 0, 100% 0, 50% 54%);
+        transform-origin: top center;
+        transition:
+          transform 0.8s cubic-bezier(0.4, 0.1, 0.2, 1),
+          z-index 0s 0.35s;
+      }
+      .env.opening .flap {
+        transform: rotateX(180deg);
+        z-index: 1;
+      }
+      .btn {
+        font:
+          500 1.05rem "Cormorant Garamond",
+          Georgia,
+          serif;
+        letter-spacing: 0.14em;
+        padding: 0.85rem 2rem;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        border-radius: 2px;
+        transition:
+          background 0.3s,
+          color 0.3s,
+          opacity 0.5s;
+      }
+      .btn:hover,
+      .btn:focus-visible {
+        background: var(--ink-ui);
+        color: var(--bg);
+        outline: none;
+      }
+      .btn:disabled {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* Reader */
+      .reader {
+        position: fixed;
+        inset: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        perspective: 1400px;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.6s ease;
+        -webkit-overflow-scrolling: touch;
+      }
+      body.reading .reader {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .wrap {
+        max-width: 660px;
+        margin: 0 auto;
+        padding: clamp(0.8rem, 4vh, 2.5rem) clamp(0.7rem, 3vw, 1rem)
+          calc(clamp(1.5rem, 6vh, 3rem) + env(safe-area-inset-bottom, 0px));
+        transform-origin: top center;
+      }
+      body.reading .wrap {
+        animation: unfold 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      }
+      .reader.closing .wrap {
+        animation: fold 1s cubic-bezier(0.6, 0, 0.8, 0.4) both;
+      }
+      @keyframes unfold {
+        from {
+          opacity: 0;
+          transform: translateY(70px) rotateX(-40deg) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes fold {
+        to {
+          opacity: 0;
+          transform: translateY(80px) rotateX(-40deg) scale(0.93);
+        }
+      }
+      .paper {
+        background: linear-gradient(180deg, #fdfbf7, var(--paper) 60%, #f6f2e9);
+        padding: clamp(1.7rem, 7vw, 3.8rem) clamp(1.4rem, 7vw, 3.6rem)
+          clamp(2rem, 7vw, 3.4rem);
+        border-radius: 2px;
+        box-shadow:
+          0 1px 2px rgba(0, 0, 0, 0.1),
+          0 22px 50px rgba(0, 0, 0, 0.16);
+        color: var(--ink);
+        font-family: Caveat, "Segoe Script", "Bradley Hand", cursive;
+        font-weight: 500;
+        animation: sway 9s ease-in-out infinite;
+      }
+      @keyframes sway {
+        0%,
+        100% {
+          transform: rotate(-0.25deg) translateY(0);
+        }
+        50% {
+          transform: rotate(0.25deg) translateY(-4px);
+        }
+      }
+      .title {
+        font-weight: 700;
+        font-size: clamp(2.3rem, 9vw, 3.2rem);
+        line-height: 1.1;
+        margin: 0 0 2rem;
+        display: inline;
+        background: linear-gradient(transparent 62%, rgba(0, 0, 0, 0.09) 62%) 0
+          0/0% 100% no-repeat;
+        opacity: 0;
+      }
+      .go .title {
+        animation:
+          fade 1s ease forwards,
+          mark 1.2s 0.6s ease forwards;
+      }
+      @keyframes mark {
+        to {
+          background-size: 100% 100%;
+        }
+      }
+      .t-wrap {
+        margin: 0 0 2rem;
+      }
+      .paper p {
+        font-size: clamp(1.5rem, 5.2vw, 1.85rem);
+        line-height: 1.5;
+        margin: 0 0 1.1rem;
+      }
+      .w {
+        opacity: 0;
+      }
+      .go .w {
+        animation: fade 0.8s ease forwards;
+      }
+      @keyframes fade {
+        to {
+          opacity: 1;
+        }
+      }
+      .sig {
+        margin-top: 1.6rem;
+        min-height: 70px;
+      }
+      .sig svg {
+        width: 200px;
+        height: auto;
+        overflow: visible;
+      }
+      .sig path {
+        fill: none;
+        stroke: var(--ink);
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-dasharray: 520;
+        stroke-dashoffset: 520;
+      }
+      .done .sig path {
+        animation: draw 2.4s ease forwards;
+      }
+      @keyframes draw {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+      .sig span {
+        font-size: 2.4rem;
+        font-weight: 700;
+        opacity: 0;
+      }
+      .done .sig span {
+        animation: fade 1.6s forwards;
+      }
+      .end {
+        margin-top: 2.6rem;
+        padding-top: 1.6rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.12);
+        text-align: center;
+        opacity: 0;
+        transition: opacity 1.4s ease 1.6s;
+      }
+      .done .end {
+        opacity: 1;
+      }
+      .end p {
+        font:
+          400 1.2rem/1.5 "Cormorant Garamond",
+          Georgia,
+          serif;
+        letter-spacing: 0.02em;
+        color: #555;
+        margin: 0 0 1.4rem;
+      }
+      .end .btn {
+        color: #2b2b2b;
+        border-color: rgba(0, 0, 0, 0.35);
+      }
+      .end .btn:hover,
+      .end .btn:focus-visible {
+        background: #2b2b2b;
+        color: var(--paper);
+      }
+      .end .btn {
+        pointer-events: none;
+      }
+      .done .end .btn {
+        pointer-events: auto;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.01s !important;
+          transition-duration: 0.01s !important;
+        }
+        .paper,
+        .env {
+          animation: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="stage">
+      <h1>A Letter of Apology</h1>
+      <div class="env" id="env">
+        <div class="back"></div>
+        <div class="note"><i></i><i></i><i></i></div>
+        <div class="front"></div>
+        <div class="flap"></div>
+      </div>
+      <button class="btn" id="open">Open Letter</button>
+    </main>
+
+    <div class="reader" id="reader" aria-live="polite">
+      <div class="wrap">
+        <article class="paper" id="paper">
+          <div class="t-wrap"><h2 class="title">I’m Truly Sorry</h2></div>
+          <div id="letter"></div>
+          <div class="sig" aria-label="Signature"></div>
+          <div class="end">
+            <p>Thank you for taking the time to read this.</p>
+            <button class="btn" id="close">Close Letter</button>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var SIGNATURE = ""; // optional: put a name here to sign with text instead of a hand-drawn line
+        var P = [
+          "beby,",
+          "I know po that you not gonna forgive me for what i’ve done, and I know that me can’t ask you to forget everything just because i’m sorry. I know that a simple apology cannot fix this.",
+          "sorry po for sharing something that was supposed to remain private between us. i should have thought about what will u feel, your privacy, and how my actions could affect you.",
+          "I’m also sorry for being so immature. i should have opened up, listened more, and understood your.",
+          "i won’t force you po to forgive me, and i don’t expect you to move on .you have every right to feel disappointed, angry, or hurt for as long as you need.",
+          "i regret my decisions. i’m so sorry about the things that i’ve don.",
+          "i’ll be better po for you and for us. please forgive me for being like this.",
+          "i love you so much, and that i should love you with respect, honesty, and consideration. i’m sorry that i failed you.",
+          "i’m not asking you to forget me for what happened or forgive me immediately.",
+          "i’m so sorry, beby. you deserved better from me, i’ll take responsibility sa mga nagawa ko.",
+        ];
+        var RM = matchMedia("(prefers-reduced-motion: reduce)").matches,
+          k = RM ? 0 : 1;
+        var env = document.getElementById("env"),
+          reader = document.getElementById("reader"),
+          letter = document.getElementById("letter"),
+          openBtn = document.getElementById("open"),
+          closeBtn = document.getElementById("close"),
+          sig = document.querySelector(".sig");
+        var timers = [],
+          touched = false,
+          d = 1.2,
+          starts = [];
+
+        P.forEach(function (t) {
+          var p = document.createElement("p");
+          starts.push({ el: p, at: d });
+          t.split(" ").forEach(function (w) {
+            var s = document.createElement("span");
+            s.className = "w";
+            s.textContent = w + " ";
+            s.style.animationDelay = d * k + "s";
+            d += 0.075 + (/[,.]$/.test(w) ? 0.2 : 0);
+            p.appendChild(s);
+          });
+          d += 0.45;
+          letter.appendChild(p);
+        });
+        var total = d;
+
+        sig.innerHTML = SIGNATURE
+          ? "<span></span>"
+          : '<svg viewBox="0 0 220 60" aria-hidden="true"><path d="M6 42C26 6 46 4 42 34S62 52 82 22s20-14 22 14c2 24 26-6 40-8s26 14 46-4"/></svg>';
+        if (SIGNATURE) sig.firstChild.textContent = SIGNATURE;
+
+        ["wheel", "touchstart", "keydown"].forEach(function (e) {
+          reader.addEventListener(
+            e,
+            function () {
+              touched = true;
+            },
+            { passive: true },
+          );
+        });
+
+        function later(fn, s) {
+          timers.push(setTimeout(fn, s * 1000 * k));
+        }
+
+        function follow(p) {
+          if (touched) return;
+          var r = p.getBoundingClientRect(),
+            h = reader.clientHeight;
+          if (r.bottom > h * 0.78)
+            reader.scrollTo({
+              top: reader.scrollTop + r.top - h * 0.3,
+              behavior: "smooth",
+            });
+        }
+
+        function start() {
+          touched = false;
+          reader.classList.add("go");
+          starts.forEach(function (s) {
+            later(function () {
+              follow(s.el);
+            }, s.at);
+          });
+          later(function () {
+            reader.classList.add("done");
+            if (!touched)
+              later(function () {
+                reader.scrollTo({
+                  top: reader.scrollHeight,
+                  behavior: "smooth",
+                });
+              }, 0.8);
+          }, total + 0.3);
+        }
+
+        openBtn.addEventListener("click", function () {
+          openBtn.disabled = true;
+          env.classList.add("opening");
+          setTimeout(function () {
+            reader.scrollTop = 0;
+            document.body.classList.add("reading");
+            setTimeout(start, 1100 * k);
+          }, 1900 * k);
+        });
+
+        closeBtn.addEventListener("click", function () {
+          timers.forEach(clearTimeout);
+          timers = [];
+          reader.classList.add("closing");
+          setTimeout(function () {
+            env.classList.remove("opening");
+            document.body.classList.remove("reading");
+            reader.classList.remove("closing", "go", "done");
+            reader.scrollTop = 0;
+            setTimeout(function () {
+              openBtn.disabled = false;
+            }, 900 * k);
+          }, 1000 * k);
+        });
+      })();
+    </script>
+  </body>
+</html>
